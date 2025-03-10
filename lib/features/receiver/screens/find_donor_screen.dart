@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/providers/request.dart';
 import '../widgets/request_card.dart';
+import 'detailed_donor.dart';
 
 class ReceiverFindDonorsScreen extends StatefulWidget {
   const ReceiverFindDonorsScreen({super.key});
@@ -53,7 +54,7 @@ class _ReceiverFindDonorsScreenState extends State<ReceiverFindDonorsScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  // ✅ Blood Group Dropdown
+                  // Blood Group
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -67,8 +68,10 @@ class _ReceiverFindDonorsScreenState extends State<ReceiverFindDonorsScreen> {
                     items: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]
                         .map((group) => DropdownMenuItem(
                               value: group,
-                              child: Text(group,
-                                  style: const TextStyle(color: Colors.white)),
+                              child: Text(
+                                group,
+                                style: const TextStyle(color: Colors.white),
+                              ),
                             ))
                         .toList(),
                     onChanged: (value) =>
@@ -84,7 +87,7 @@ class _ReceiverFindDonorsScreenState extends State<ReceiverFindDonorsScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ✅ City Input Field
+                  // City Input
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -110,7 +113,7 @@ class _ReceiverFindDonorsScreenState extends State<ReceiverFindDonorsScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // ✅ Search Button
+                  // Search Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -131,13 +134,12 @@ class _ReceiverFindDonorsScreenState extends State<ReceiverFindDonorsScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
 
-            // ✅ Search Loading Indicator
+            // Loading
             if (isSearching) const Center(child: CircularProgressIndicator()),
 
-            // ✅ Show Donor Results
+            // No donors found
             if (donors.isEmpty && !isSearching)
               const Center(
                 child: Padding(
@@ -149,7 +151,7 @@ class _ReceiverFindDonorsScreenState extends State<ReceiverFindDonorsScreen> {
                 ),
               ),
 
-            // ✅ Display List of Donors
+            // Show Donor Cards
             if (donors.isNotEmpty)
               Expanded(
                 child: ListView.builder(
@@ -157,18 +159,36 @@ class _ReceiverFindDonorsScreenState extends State<ReceiverFindDonorsScreen> {
                   itemCount: donors.length,
                   itemBuilder: (context, index) {
                     final donor = donors[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: DonorCard(
-                        name: donor["name"] ?? "N/A",
-                        age: donor["age"]?.toString() ?? "N/A",
-                        bloodGroup: donor["bloodGroup"] ?? "N/A",
-                        location: donor["city"] ?? "N/A",
-                        contact: donor["contact"] ?? "N/A",
-                        lastDonationDate: donor["lastDonationDate"] ?? "N/A",
-                        isAvailable: donor["isAvailable"] ?? false,
-                        profilePic: donor["profilePic"] ?? "",
-                      ),
+                    final name = donor["name"] ?? "N/A";
+                    final bloodGroup = donor["bloodGroup"] ?? "N/A";
+                    final contact = donor["contact"] ?? "N/A";
+                    final isAvailable = donor["isAvailable"] ?? false;
+                    final lastDonation = donor["lastDonationDate"] ?? "N/A";
+
+                    return DonorCard(
+                      name: name,
+                      bloodGroup: bloodGroup,
+                      isAvailable: isAvailable,
+                      contact: contact,
+                      profilePic: donor["profilePic"] ?? "",
+                      onViewDetails: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DetailedDonorPage(
+                              name: name,
+                              age: (donor["age"]?.toString()) ?? "N/A",
+                              bloodGroup: bloodGroup,
+                              location: donor["city"] ?? "N/A",
+                              contact: contact,
+                              profilePic: donor["profilePic"],
+                              isAvailable: isAvailable,
+                              lastDonationDate: lastDonation,
+                              notes: donor["additionalNotes"] ?? "",
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),

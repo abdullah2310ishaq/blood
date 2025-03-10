@@ -11,6 +11,30 @@ class RequestProvider with ChangeNotifier {
 
   List<Map<String, dynamic>> _donors = []; // ✅ Fixed: Added _donors list
   List<Map<String, dynamic>> get donors => _donors;
+  Future<Map<String, dynamic>?> fetchDonorDetails(String donorId) async {
+    try {
+      DocumentSnapshot doc =
+          await _firestore.collection("users").doc(donorId).get();
+      if (doc.exists) {
+        return {
+          "id": doc.id,
+          "name": doc["name"] ?? "Unknown",
+          "age": doc["age"]?.toString() ?? "N/A",
+          "bloodGroup": doc["bloodGroup"] ?? "N/A",
+          "city": doc["city"] ?? "N/A",
+          "contact": doc["contact"] ?? "N/A",
+          "profilePic": doc["profilePic"] ?? "",
+          "lastDonationDate": doc["lastDonationDate"] ?? "Not Available",
+          "isAvailable": doc["isAvailable"] ?? false,
+          "gender": doc["gender"] ?? "N/A",
+          "additionalNotes": doc["additionalNotes"] ?? "",
+        };
+      }
+    } catch (e) {
+      debugPrint("❌ Error fetching donor details: $e");
+    }
+    return null;
+  }
 
   Future<void> createRequest({
     required String bloodGroup,
