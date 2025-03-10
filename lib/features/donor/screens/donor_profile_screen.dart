@@ -23,8 +23,12 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
   String contact = "";
   String city = "";
   String bloodGroup = "A+";
-  bool isAvailable = true;
+  int age = 18;
+  String gender = "Male";
+  DateTime? lastDonationDate;
+  bool isAvailable = true; // ✅ Availability Status
   String profilePicUrl = "";
+  String additionalNotes = "";
 
   bool isLoading = true;
   File? _imageFile;
@@ -55,8 +59,15 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
           contact = doc.get('contact') ?? "";
           city = doc.get('city') ?? "";
           bloodGroup = doc.get('bloodGroup') ?? "A+";
-          isAvailable = doc.get('isAvailable') ?? true;
+          age = doc.get('age') ?? 18;
+          gender = doc.get('gender') ?? "Male";
+          lastDonationDate = doc.get('lastDonationDate') != null
+              ? DateTime.parse(doc.get('lastDonationDate'))
+              : null;
+          isAvailable =
+              doc.get('isAvailable') ?? true; // ✅ Load Availability Status
           profilePicUrl = doc.get('profilePic') ?? "";
+          additionalNotes = doc.get('additionalNotes') ?? "";
           isLoading = false;
         });
       } else {
@@ -70,42 +81,6 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
       setState(() {
         isLoading = false;
       });
-    }
-  }
-
-  // ✅ Upload Profile Image to Firebase Storage
-  Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-
-      User? user = _authService.getCurrentUser();
-      if (user != null) {
-        try {
-          String filePath = "profile_pics/${user.uid}.jpg";
-          Reference storageRef = FirebaseStorage.instance.ref().child(filePath);
-          await storageRef.putFile(_imageFile!);
-          String downloadUrl = await storageRef.getDownloadURL();
-
-          // Update profile pic in Firestore
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .update({"profilePic": downloadUrl});
-
-          setState(() {
-            profilePicUrl = downloadUrl;
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Profile picture updated!")),
-          );
-        } catch (e) {
-          print("Error uploading profile picture: $e");
-        }
-      }
     }
   }
 
@@ -124,7 +99,11 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
           "contact": contact,
           "city": city,
           "bloodGroup": bloodGroup,
-          "isAvailable": isAvailable,
+          "age": age,
+          "gender": gender,
+          "lastDonationDate": lastDonationDate?.toIso8601String(),
+          "isAvailable": isAvailable, // ✅ Save Availability Status
+          "additionalNotes": additionalNotes,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -170,7 +149,49 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                             bottom: 0,
                             right: 0,
                             child: InkWell(
-                              onTap: _pickImage,
+                              onTap: () async {
+                                final pickedFile = await _picker.pickImage(
+                                    source: ImageSource.gallery);
+                                if (pickedFile != null) {
+                                  setState(() {
+                                    _imageFile = File(pickedFile.path);
+                                  });
+
+                                  User? user = _authService.getCurrentUser();
+                                  if (user != null) {
+                                    try {
+                                      String filePath =
+                                          "profile_pics/${user.uid}.jpg";
+                                      Reference storageRef = FirebaseStorage
+                                          .instance
+                                          .ref()
+                                          .child(filePath);
+                                      await storageRef.putFile(_imageFile!);
+                                      String downloadUrl =
+                                          await storageRef.getDownloadURL();
+
+                                      await FirebaseFirestore.instance
+                                          .collection('users')
+                                          .doc(user.uid)
+                                          .update({"profilePic": downloadUrl});
+
+                                      setState(() {
+                                        profilePicUrl = downloadUrl;
+                                      });
+
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                "Profile picture updated!")),
+                                      );
+                                    } catch (e) {
+                                      print(
+                                          "Error uploading profile picture: $e");
+                                    }
+                                  }
+                                }
+                              },
                               child: const CircleAvatar(
                                 backgroundColor: Colors.white,
                                 radius: 18,
@@ -192,46 +213,32 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                         border: OutlineInputBorder(),
                       ),
                       onChanged: (val) => name = val,
-                      validator: (val) =>
-                          val!.isEmpty ? "Enter your name" : null,
                     ),
                     const SizedBox(height: 16),
 
-                    // ✅ Contact Field
+                    // ✅ Age Field
                     TextFormField(
-                      initialValue: contact,
+                      initialValue: age.toString(),
                       decoration: const InputDecoration(
-                        labelText: "Contact",
+                        labelText: "Age",
                         border: OutlineInputBorder(),
                       ),
-                      onChanged: (val) => contact = val,
-                      validator: (val) =>
-                          val!.isEmpty ? "Enter your contact" : null,
+                      keyboardType: TextInputType.number,
+                      onChanged: (val) => age = int.tryParse(val) ?? 18,
                     ),
                     const SizedBox(height: 16),
 
-                    // ✅ City Field
-                    TextFormField(
-                      initialValue: city,
-                      decoration: const InputDecoration(
-                        labelText: "City",
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (val) => city = val,
-                      validator: (val) =>
-                          val!.isEmpty ? "Enter your city" : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ✅ Blood Group Dropdown
-                    const Text("Blood Group"),
+                    // ✅ Gender Dropdown
+                    const Text("Gender"),
                     DropdownButtonFormField<String>(
-                      value: bloodGroup,
-                      items: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]
-                          .map((group) => DropdownMenuItem(
-                              value: group, child: Text(group)))
+                      value: gender,
+                      items: ["Male", "Female"]
+                          .map((gen) => DropdownMenuItem(
+                                value: gen,
+                                child: Text(gen),
+                              ))
                           .toList(),
-                      onChanged: (value) => setState(() => bloodGroup = value!),
+                      onChanged: (value) => setState(() => gender = value!),
                     ),
                     const SizedBox(height: 16),
 
@@ -248,24 +255,49 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+
+                    // ✅ Last Donation Date Picker
+                    const Text("Last Donation Date"),
+                    GestureDetector(
+                      onTap: () async {
+                        DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now(),
+                        );
+                        if (pickedDate != null) {
+                          setState(() => lastDonationDate = pickedDate);
+                        }
+                      },
+                      child: TextFormField(
+                        enabled: false,
+                        decoration: InputDecoration(
+                          hintText: lastDonationDate == null
+                              ? "Select Date"
+                              : "${lastDonationDate!.day}/${lastDonationDate!.month}/${lastDonationDate!.year}",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ✅ Additional Notes
+                    TextFormField(
+                      initialValue: additionalNotes,
+                      decoration: const InputDecoration(
+                        labelText: "Additional Notes (Optional)",
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) => additionalNotes = val,
+                    ),
                     const SizedBox(height: 24),
 
                     // ✅ Save Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: _saveProfile,
-                        child: const Text("Save Profile",
-                            style:
-                                TextStyle(fontSize: 18, color: Colors.white)),
-                      ),
+                    ElevatedButton(
+                      onPressed: _saveProfile,
+                      child: const Text("Save Profile"),
                     ),
                   ],
                 ),

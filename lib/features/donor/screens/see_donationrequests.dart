@@ -21,7 +21,10 @@ class _DonorBloodRequestsScreenState extends State<DonorBloodRequestsScreen> {
   }
 
   Future<void> _loadRequests() async {
-    await Provider.of<RequestProvider>(context, listen: false).fetchActiveRequests();
+    await Provider.of<RequestProvider>(context, listen: false)
+        .fetchActiveRequests();
+
+    // ✅ Ensure UI updates after data is loaded
     setState(() => isLoading = false);
   }
 
@@ -90,5 +93,8 @@ class _DonorBloodRequestsScreenState extends State<DonorBloodRequestsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("You accepted this request.")),
     );
+
+    // Refresh requests after accepting one
+    _loadRequests();
   }
 }

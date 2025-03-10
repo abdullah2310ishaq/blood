@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.blood"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

@@ -12,7 +12,6 @@ class RequestProvider with ChangeNotifier {
   List<Map<String, dynamic>> _donors = []; // ✅ Fixed: Added _donors list
   List<Map<String, dynamic>> get donors => _donors;
 
-  // ✅ Create a New Blood Request
   Future<void> createRequest({
     required String bloodGroup,
     required int units,
@@ -26,7 +25,7 @@ class RequestProvider with ChangeNotifier {
       "bloodGroup": bloodGroup,
       "units": units,
       "location": location,
-      "status": "Pending", // ✅ FIX: Ensure status is always set
+      "status": "Pending",
       "timestamp": FieldValue.serverTimestamp(),
     };
 
@@ -37,26 +36,41 @@ class RequestProvider with ChangeNotifier {
 
   // ✅ Find Available Donors Based on Blood Group & City
   Future<void> findDonors(String bloodGroup, String city) async {
-    QuerySnapshot snapshot = await _firestore
-        .collection("users")
-        .where("role", isEqualTo: "donor")
-        .where("bloodGroup", isEqualTo: bloodGroup)
-        .where("city", isEqualTo: city)
-        .where("isAvailable", isEqualTo: true)
-        .get();
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection("users")
+          .where("role", isEqualTo: "donor")
+          .where("bloodGroup", isEqualTo: bloodGroup)
+          .where("city", isEqualTo: city)
+          .where("isAvailable",
+              isEqualTo: true) // Ensures only available donors are fetched
+          .get();
 
-    _donors = snapshot.docs.map((doc) {
-      return {
-        "id": doc.id,
-        "name": doc["name"],
-        "contact": doc["contact"],
-        "bloodGroup": doc["bloodGroup"],
-        "city": doc["city"],
-        "profilePic": doc["profilePic"],
-      };
-    }).toList();
+      _donors = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
 
-    notifyListeners();
+        debugPrint(
+            "Fetched Donor: ${data["name"]}, Available: ${data["isAvailable"]}");
+
+        return {
+          "id": doc.id,
+          "name": data["name"] ?? "Unknown",
+          "age": data["age"]?.toString() ?? "N/A",
+          "bloodGroup": data["bloodGroup"] ?? "N/A",
+          "city": data["city"] ?? "N/A",
+          "contact": data["contact"] ?? "N/A",
+          "profilePic": data["profilePic"] ?? "",
+          "lastDonationDate": data["lastDonationDate"] ?? "Not Available",
+          "isAvailable": data["isAvailable"] ?? false, // ✅ Fixing availability
+        };
+      }).toList();
+
+      debugPrint("✅ Total donors found: ${_donors.length}");
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("❌ Error fetching donors: $e");
+    }
   }
 
   Future<void> fetchMyRequests() async {
@@ -91,25 +105,28 @@ class RequestProvider with ChangeNotifier {
 // ✅ Fetch Active Requests for Donors
 // ✅ Fetch Active Requests for Donors
   Future<void> fetchActiveRequests() async {
-    QuerySnapshot snapshot = await _firestore
-        .collection("blood_requests")
-        .where("status",
-            isEqualTo: "Pending") // ✅ FIX: Ensure query filters for "Pending"
-        .orderBy("timestamp", descending: true)
-        .get();
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection("blood_requests")
+          .where("status", isEqualTo: "Pending") // Only show pending requests
+          .orderBy("timestamp", descending: true)
+          .get();
 
-    _requests = snapshot.docs.map((doc) {
-      return {
-        "id": doc.id,
-        "receiverId": doc["receiverId"],
-        "bloodGroup": doc["bloodGroup"],
-        "units": doc["units"],
-        "location": doc["location"],
-        "status": doc["status"],
-      };
-    }).toList();
+      _requests = snapshot.docs.map((doc) {
+        return {
+          "id": doc.id,
+          "receiverId": doc["receiverId"],
+          "bloodGroup": doc["bloodGroup"],
+          "units": doc["units"],
+          "location": doc["location"],
+          "status": doc["status"],
+        };
+      }).toList();
 
-    notifyListeners();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error fetching active requests: $e");
+    }
   }
 
   Future<void> acceptRequest(String requestId) async {
@@ -125,21 +142,18 @@ class RequestProvider with ChangeNotifier {
     notifyListeners();
   }
 
-Future<void> deleteRequest(String requestId) async {
-  try {
-    await _firestore.collection("blood_requests").doc(requestId).delete();
+  Future<void> deleteRequest(String requestId) async {
+    try {
+      await _firestore.collection("blood_requests").doc(requestId).delete();
 
-    // ✅ Remove the request from the list locally
-    _requests.removeWhere((req) => req["id"] == requestId);
-    
-    debugPrint("✅ Deleted request with ID: $requestId");
-    
-    notifyListeners();
-  } catch (e) {
-    debugPrint("❌ Error deleting request: $e");
+      // ✅ Remove the request from the list locally
+      _requests.removeWhere((req) => req["id"] == requestId);
+
+      debugPrint("✅ Deleted request with ID: $requestId");
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("❌ Error deleting request: $e");
+    }
   }
-}
-
-
-
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/donor_info_card.dart';
+import '../../../core/providers/donor.dart';
 
 class DonorDashboardScreen extends StatefulWidget {
   const DonorDashboardScreen({super.key});
@@ -10,44 +12,54 @@ class DonorDashboardScreen extends StatefulWidget {
 
 class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
   @override
+  void initState() {
+    super.initState();
+    // Load donor data when the dashboard loads
+    Provider.of<DonorProvider>(context, listen: false).loadDonorData();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final donorProvider = Provider.of<DonorProvider>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ✅ Blood Donation Banner Image
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(
-                      12), // Rounded corners for a smooth UI
-                  child: Image.asset(
-                    'assets/commonhome.jpg', // Replace with your image
-                    width: double.infinity,
-                    height: 160, // Adjust height
-                    fit: BoxFit.cover, // Ensures it covers the width
+      body: donorProvider.name.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ✅ Blood Donation Banner Image
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'assets/commonhome.jpg',
+                        width: double.infinity,
+                        height: 160,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 20),
+
+                  // ✅ Welcome Message
+                  Text(
+                    "Welcome, ${donorProvider.name}",
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ✅ Donor Information Card
+                  const DonorInfoCard(),
+                ],
               ),
-
-              const SizedBox(height: 20),
-
-              // ✅ Title
-              const Text(
-                "Welcome to Your Dashboard",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-
-              // ✅ Donor Info Card (Now Looks More Professional)
-              const DonorInfoCard(),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }
