@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'core/providers/donor.dart';
+import 'core/providers/notification.dart';
 import 'core/providers/receiver.dart';
 import 'core/providers/request.dart';
 import 'firebase_options.dart';
@@ -20,7 +21,10 @@ void main() async {
         ChangeNotifierProvider(
             create: (_) => DonorProvider()), // ✅ Added Provider
         ChangeNotifierProvider(
-            create: (_) => ReceiverProvider()), // ✅ Added Provider
+            create: (_) => ReceiverProvider()),
+             ChangeNotifierProvider(
+            create: (_) =>  NotificationProvider()),
+             // ✅ Added Provider
         // ✅ Added Provider
       ],
       child: const MyApp(),

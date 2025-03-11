@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:bloood_donation_app/core/widgets/customappbar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -35,8 +36,10 @@ class _ReceiverEditProfileScreenState extends State<ReceiverEditProfileScreen> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    DocumentSnapshot doc =
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
     if (doc.exists) {
       setState(() {
@@ -80,13 +83,36 @@ class _ReceiverEditProfileScreenState extends State<ReceiverEditProfileScreen> {
     }
   }
 
+  // ✅ Remove Profile Image
+  Future<void> _removeImage() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .update({"profilePic": ""});
+
+    setState(() {
+      profilePicUrl = "";
+      _imageFile = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Profile picture removed!")),
+    );
+  }
+
   // ✅ Save Profile Updates
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
         "name": name,
         "contact": contact,
         "city": city,
@@ -101,10 +127,8 @@ class _ReceiverEditProfileScreenState extends State<ReceiverEditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Edit Profile"),
-        backgroundColor: primaryColor,
-      ),
+      backgroundColor: backgroundColor,
+      appBar: CustomAppBar(),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -113,12 +137,12 @@ class _ReceiverEditProfileScreenState extends State<ReceiverEditProfileScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // ✅ Profile Image
+                    // ✅ Profile Image Section
                     Center(
                       child: Stack(
                         children: [
                           CircleAvatar(
-                            radius: 50,
+                            radius: 55,
                             backgroundColor: Colors.grey[300],
                             backgroundImage: profilePicUrl.isNotEmpty
                                 ? NetworkImage(profilePicUrl)
@@ -128,17 +152,34 @@ class _ReceiverEditProfileScreenState extends State<ReceiverEditProfileScreen> {
                                     size: 50, color: Colors.grey)
                                 : null,
                           ),
+                          // Change & Remove Options
                           Positioned(
                             bottom: 0,
                             right: 0,
-                            child: InkWell(
-                              onTap: _pickImage,
-                              child: const CircleAvatar(
-                                backgroundColor: Colors.white,
-                                radius: 18,
-                                child:
-                                    Icon(Icons.camera_alt, color: Colors.black),
-                              ),
+                            child: Row(
+                              children: [
+                                InkWell(
+                                  onTap: _pickImage,
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.white,
+                                    radius: 18,
+                                    child: const Icon(Icons.camera_alt,
+                                        color: Colors.black),
+                                  ),
+                                ),
+                                if (profilePicUrl.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  InkWell(
+                                    onTap: _removeImage,
+                                    child: CircleAvatar(
+                                      backgroundColor: Colors.red[100],
+                                      radius: 18,
+                                      child: const Icon(Icons.delete,
+                                          color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
@@ -147,42 +188,30 @@ class _ReceiverEditProfileScreenState extends State<ReceiverEditProfileScreen> {
                     const SizedBox(height: 24),
 
                     // ✅ Name Field
-                    TextFormField(
+                    _buildTextField(
+                      label: "Name",
+                      hintText: "Enter your name",
                       initialValue: name,
-                      decoration: const InputDecoration(
-                        labelText: "Name",
-                        border: OutlineInputBorder(),
-                      ),
                       onChanged: (val) => name = val,
-                      validator: (val) =>
-                          val!.isEmpty ? "Enter your name" : null,
                     ),
-                    const SizedBox(height: 16),
 
                     // ✅ Contact Field
-                    TextFormField(
+                    _buildTextField(
+                      label: "Contact",
+                      hintText: "Enter your contact",
                       initialValue: contact,
-                      decoration: const InputDecoration(
-                        labelText: "Contact",
-                        border: OutlineInputBorder(),
-                      ),
                       onChanged: (val) => contact = val,
-                      validator: (val) =>
-                          val!.isEmpty ? "Enter your contact" : null,
+                      keyboardType: TextInputType.phone,
                     ),
-                    const SizedBox(height: 16),
 
                     // ✅ City Field
-                    TextFormField(
+                    _buildTextField(
+                      label: "City",
+                      hintText: "Enter your city",
                       initialValue: city,
-                      decoration: const InputDecoration(
-                        labelText: "City",
-                        border: OutlineInputBorder(),
-                      ),
                       onChanged: (val) => city = val,
-                      validator: (val) =>
-                          val!.isEmpty ? "Enter your city" : null,
                     ),
+
                     const SizedBox(height: 24),
 
                     // ✅ Save Button
@@ -193,19 +222,54 @@ class _ReceiverEditProfileScreenState extends State<ReceiverEditProfileScreen> {
                           backgroundColor: primaryColor,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         onPressed: _saveProfile,
-                        child: const Text("Save Profile",
-                            style:
-                                TextStyle(fontSize: 18, color: Colors.white)),
+                        child: const Text(
+                          "Save Profile",
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  // ✅ Custom Text Field
+  Widget _buildTextField({
+    required String label,
+    required String hintText,
+    required String initialValue,
+    required ValueChanged<String> onChanged,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        TextFormField(
+          initialValue: initialValue,
+          decoration: InputDecoration(
+            hintText: hintText,
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade400),
+            ),
+          ),
+          keyboardType: keyboardType,
+          onChanged: onChanged,
+          validator: (val) => val!.isEmpty ? "This field is required" : null,
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }
