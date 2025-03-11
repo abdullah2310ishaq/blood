@@ -13,10 +13,10 @@ class DonorFormScreen extends StatefulWidget {
 class _DonorFormScreenState extends State<DonorFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  String bloodGroup = "A+"; // Default Blood Group
-  String gender = "Male"; // Default Gender
+  String bloodGroup = "A+";
+  String gender = "Male";
   String city = "";
-  int age = 18; // Default Age
+  int age = 18;
   DateTime? lastDonationDate;
   bool isAvailable = true;
   String additionalNotes = "";
@@ -36,18 +36,25 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
           "age": age,
           "gender": gender,
           "city": city,
-          "lastDonationDate":
-              lastDonationDate != null ? lastDonationDate!.toIso8601String() : "",
+          "lastDonationDate": lastDonationDate != null
+              ? lastDonationDate!.toIso8601String()
+              : "",
           "isAvailable": isAvailable,
           "additionalNotes": additionalNotes,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Donation details saved successfully!")),
+          SnackBar(
+            content: const Text("Donation details saved successfully!"),
+            backgroundColor: primaryColor,
+          ),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${e.toString()}")),
+          SnackBar(
+            content: Text("Error: ${e.toString()}"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -56,10 +63,8 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Donate Blood"),
-        backgroundColor: primaryColor,
-      ),
+      backgroundColor: backgroundColor, // ✅ Soft creamy white background
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -67,8 +72,9 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Blood Group Dropdown
-              const Text("Blood Group"),
+              // ✅ Blood Group Dropdown
+              const Text("Blood Group",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               DropdownButtonFormField<String>(
                 value: bloodGroup,
                 items: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]
@@ -78,27 +84,28 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
                         ))
                     .toList(),
                 onChanged: (value) => setState(() => bloodGroup = value!),
+                decoration: _inputDecoration(),
               ),
               const SizedBox(height: 16),
 
-              // Age Input
-              const Text("Age"),
+              // ✅ Age Input
+              const Text("Age",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               TextFormField(
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: "Enter your age",
-                ),
+                decoration: _inputDecoration(hintText: "Enter your age"),
                 onChanged: (val) => age = int.tryParse(val) ?? 18,
-                validator: (val) =>
-                    (val!.isEmpty || int.tryParse(val) == null || int.parse(val) < 18)
-                        ? "Enter a valid age (18+)"
-                        : null,
+                validator: (val) => (val!.isEmpty ||
+                        int.tryParse(val) == null ||
+                        int.parse(val) < 18)
+                    ? "Enter a valid age (18+)"
+                    : null,
               ),
               const SizedBox(height: 16),
 
-              // Gender Selection
-              const Text("Gender"),
+              // ✅ Gender Selection
+              const Text("Gender",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               Row(
                 children: [
                   Radio(
@@ -117,21 +124,20 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // City Input
-              const Text("City"),
+              // ✅ City Input
+              const Text("City",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               TextFormField(
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: "Enter your city",
-                ),
+                decoration: _inputDecoration(hintText: "Enter your city"),
                 onChanged: (val) => city = val,
                 validator: (val) =>
                     val!.isEmpty ? "Please enter your city" : null,
               ),
               const SizedBox(height: 16),
 
-              // Last Donation Date Picker
-              const Text("Last Donation Date"),
+              // ✅ Last Donation Date Picker
+              const Text("Last Donation Date",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               GestureDetector(
                 onTap: () async {
                   DateTime? pickedDate = await showDatePicker(
@@ -146,7 +152,8 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
                 },
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey),
                     borderRadius: BorderRadius.circular(5),
@@ -161,11 +168,13 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Availability Toggle
+              // ✅ Availability Toggle
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Available to Donate?"),
+                  const Text("Available to Donate?",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   Switch(
                     value: isAvailable,
                     activeColor: primaryColor,
@@ -175,19 +184,18 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Additional Notes
-              const Text("Additional Notes (Optional)"),
+              // ✅ Additional Notes
+              const Text("Additional Notes (Optional)",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               TextFormField(
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: "Enter any extra details...",
-                ),
+                decoration:
+                    _inputDecoration(hintText: "Enter any extra details..."),
                 onChanged: (val) => additionalNotes = val,
               ),
               const SizedBox(height: 24),
 
-              // Submit Button
+              // ✅ Submit Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -208,6 +216,20 @@ class _DonorFormScreenState extends State<DonorFormScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ✅ Input Field Decoration
+  InputDecoration _inputDecoration({String? hintText}) {
+    return InputDecoration(
+      hintText: hintText,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade400),
       ),
     );
   }

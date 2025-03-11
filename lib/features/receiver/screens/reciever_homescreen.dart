@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../core/widgets/customappbar.dart'; // ✅ Import Custom AppBar
-// ✅ Import Custom Navbar
+import '../../../core/widgets/customappbar.dart'; // Custom AppBar
 import '../widgets/navbar.dart';
 import 'find_donor_screen.dart';
 import 'receiverrequestscreen.dart';
 import 'editprofile.dart';
+import 'receiver_create_request.dart'; // For 'Request Blood' Screen
+import '../../../core/constants/colors.dart'; // Your color constants
 
 class ReceiverHomeScreen extends StatefulWidget {
   const ReceiverHomeScreen({super.key});
@@ -21,9 +22,9 @@ class _ReceiverHomeScreenState extends State<ReceiverHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(), // ✅ Use Custom AppBar
+      appBar: const CustomAppBar(), // ✅ Using Custom AppBar
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -38,59 +39,78 @@ class _ReceiverHomeScreenState extends State<ReceiverHomeScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ✅ Banner Image (commonhome.jpg)
+            // ✅ Banner Image
             Center(
-              child: Image.asset(
-                'assets/commonhome.jpg', // Ensure image exists in assets folder
-                width: double.infinity,
-                height: 180,
-                fit: BoxFit.cover,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/commonhome.jpg',
+                  width: double.infinity,
+                  height: 180,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(height: 24),
 
-            // ✅ Buttons Section
-            Column(
+            // 🔹 ROW 1: Request Blood & Find Donor
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 🔴 Find Donors Button
-                _buildActionButton(
-                  label: "Find Donors",
-                  icon: 'assets/donor.png',
-                  onPressed: () {
+                _buildSmallCard(
+                  label: "Request Blood",
+                  imagePath: "assets/edit1.png",
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              const ReceiverFindDonorsScreen()),
+                        builder: (context) =>
+                            const ReceiverCreateRequestScreen(),
+                      ),
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                _buildSmallCard(
+                  label: "Find Donor",
+                  imagePath: "assets/edit.png",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ReceiverFindDonorsScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
 
-                // 📝 View Requests Button
-                _buildActionButton(
+            // 🔹 ROW 2: View Requests & Profile
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildSmallCard(
                   label: "View Requests",
-                  icon: 'assets/donor.png', // Add this image in assets
-                  onPressed: () {
+                  imagePath: "assets/requests.png", // Replace with your asset
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const ReceiverRequestsScreen()),
+                        builder: (context) => const ReceiverRequestsScreen(),
+                      ),
                     );
                   },
                 ),
-                const SizedBox(height: 16),
-
-                // 👤 Edit Profile Button
-                _buildActionButton(
-                  label: "Edit Profile",
-                  icon: 'assets/donor.png', // Add this image in assets
-                  onPressed: () {
+                _buildSmallCard(
+                  label: "Profile",
+                  imagePath: "assets/profile.png", // Replace with your asset
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              const ReceiverEditProfileScreen()),
+                        builder: (context) => const ReceiverEditProfileScreen(),
+                      ),
                     );
                   },
                 ),
@@ -99,44 +119,47 @@ class _ReceiverHomeScreenState extends State<ReceiverHomeScreen> {
           ],
         ),
       ),
-
-      // ✅ Custom Bottom Navigation Bar
-      bottomNavigationBar: ReceiverNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      ),
     );
   }
 
-  // ✅ Helper Function to Create Buttons
-  Widget _buildActionButton({
+  // ✅ Helper Function for 2x2 Cards
+  Widget _buildSmallCard({
     required String label,
-    required String icon,
-    required VoidCallback onPressed,
+    required String imagePath,
+    required VoidCallback onTap,
   }) {
-    return SizedBox(
-      width: 220,
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.redAccent, // Primary color
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 160,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: backgroundColor, // Soft creamy white (or your chosen color)
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        icon: Image.asset(
-          icon, // Ensure the image exists in assets
-          height: 30,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(imagePath, height: 40),
+            const SizedBox(height: 13),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-        label: Text(
-          label,
-          style: const TextStyle(fontSize: 18, color: Colors.white),
-        ),
-        onPressed: onPressed,
       ),
     );
   }

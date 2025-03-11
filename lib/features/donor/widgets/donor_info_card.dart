@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../core/constants/colors.dart';
 import '../../../core/providers/donor.dart';
 
 class DonorInfoCard extends StatefulWidget {
@@ -18,11 +19,12 @@ class _DonorInfoCardState extends State<DonorInfoCard> {
     final donorProvider = Provider.of<DonorProvider>(context);
 
     return Card(
-      elevation: 3,
+      elevation: 5, // ✅ Improved elevation for a premium look
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.black, width: 2), // ✅ Black Borders
       ),
-      color: Colors.white, // Improved contrast
+      color: Colors.white, // ✅ Contrast with the creamy background
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         child: Column(
@@ -78,7 +80,7 @@ class _DonorInfoCardState extends State<DonorInfoCard> {
                               : "No Blood Group",
                           style: const TextStyle(fontSize: 14),
                         ),
-                        backgroundColor: Colors.redAccent.withOpacity(0.1),
+                        backgroundColor: primaryColor.withOpacity(0.1),
                       ),
                     ],
                   ),

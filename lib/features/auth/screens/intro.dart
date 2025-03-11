@@ -9,7 +9,7 @@ class IntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: secondaryColor, // White background
+      backgroundColor: Colors.white, // White background
       body: Stack(
         children: [
           // Main Column with Logo & Buttons

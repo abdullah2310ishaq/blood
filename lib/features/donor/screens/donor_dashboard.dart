@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/constants/colors.dart';
 import '../widgets/donor_info_card.dart';
 import '../../../core/providers/donor.dart';
 
@@ -23,7 +24,7 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
     final donorProvider = Provider.of<DonorProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor, // ✅ Updated background color
       body: donorProvider.name.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -51,6 +52,7 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(height: 20),
