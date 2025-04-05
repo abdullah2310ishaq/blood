@@ -1,215 +1,211 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bloood_donation_app/core/providers/auth_provider.dart';
+import 'package:bloood_donation_app/features/donor/screens/donor_profile_screen.dart';
+import 'package:bloood_donation_app/features/receiver/screens/editprofile.dart';
 
-import '../../../core/constants/colors.dart';
-import '../../../core/services/auth_service.dart';
+class SignupScreen extends StatefulWidget {
+  final String role;
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const SignupScreen({super.key, required this.role});
 
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  bool isLoading = false;
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
-  String name = '';
-  String email = '';
-  String password = '';
-  String confirmPassword = '';
-  String contact = '';
-  String city = '';
-  // Role selection with default value (can be 'donor' or 'receiver')
-  String role = 'donor';
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
-  final AuthService _authService = AuthService();
-
-  void _register() async {
+  Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
-      if (password != confirmPassword) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Passwords do not match")),
-        );
-        return;
-      }
-      setState(() => isLoading = true);
-      try {
-        // Register the user along with the selected role.
-        // Here, the role field will be saved in Firestore.
-        await _authService.registerWithEmail(
-          name: name,
-          email: email,
-          password: password,
-          contact: contact,
-          city: city,
-          role: role, // Passing the selected role.
-        );
-        // After successful registration, navigate to profile completion or dashboard.
-        Navigator.pop(context);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      } finally {
-        setState(() => isLoading = false);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.register(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+        _phoneController.text.trim(),
+        widget.role,
+      );
+
+      if (success && mounted) {
+        if (widget.role == 'donor') {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const DonorProfileScreen()),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const ReceiverEditProfileScreen()),
+          );
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final roleTitle = widget.role == 'donor' ? 'Donor' : 'Receiver';
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Register"),
-        backgroundColor: primaryColor,
-        elevation: 0,
+        title: Text('Register as $roleTitle'),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0, vertical: 16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // Logo at the top.
-                      Center(
-                        child: Image.asset('assets/logo.jpg', width: 120),
-                      ),
-                      const SizedBox(height: 24),
-                      // Name field.
-                      TextFormField(
-                        decoration: InputDecoration(
-                          labelText: "Name",
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onChanged: (val) => name = val,
-                        validator: (val) =>
-                            val!.isEmpty ? "Please enter your name" : null,
-                      ),
-                      const SizedBox(height: 16),
-                      // Contact field.
-                      TextFormField(
-                        decoration: InputDecoration(
-                          labelText: "Contact",
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onChanged: (val) => contact = val,
-                        validator: (val) =>
-                            val!.isEmpty ? "Please enter your contact" : null,
-                      ),
-                      const SizedBox(height: 16),
-                      // City field.
-                      TextFormField(
-                        decoration: InputDecoration(
-                          labelText: "City",
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onChanged: (val) => city = val,
-                        validator: (val) =>
-                            val!.isEmpty ? "Please enter your city" : null,
-                      ),
-                      const SizedBox(height: 16),
-                      // Email field.
-                      TextFormField(
-                        decoration: InputDecoration(
-                          labelText: "Email",
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onChanged: (val) => email = val,
-                        validator: (val) =>
-                            val!.isEmpty ? "Please enter your email" : null,
-                      ),
-                      const SizedBox(height: 16),
-                      // Password field.
-                      TextFormField(
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: "Password",
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onChanged: (val) => password = val,
-                        validator: (val) => val!.length < 6
-                            ? "Password must be at least 6 characters"
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      // Confirm Password field.
-                      TextFormField(
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: "Confirm Password",
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onChanged: (val) => confirmPassword = val,
-                        validator: (val) => val!.isEmpty
-                            ? "Please confirm your password"
-                            : null,
-                      ),
-                      const SizedBox(height: 24),
-                      // Role selection: Radio Buttons for Donor and Receiver.
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Radio<String>(
-                            value: 'donor',
-                            groupValue: role,
-                            activeColor: primaryColor,
-                            onChanged: (value) {
-                              setState(() {
-                                role = value!;
-                              });
-                            },
-                          ),
-                          const Text("Donor"),
-                          const SizedBox(width: 20),
-                          Radio<String>(
-                            value: 'receiver',
-                            groupValue: role,
-                            activeColor: primaryColor,
-                            onChanged: (value) {
-                              setState(() {
-                                role = value!;
-                              });
-                            },
-                          ),
-                          const Text("Receiver"),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Register button.
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: _register,
-                          child: const Text(
-                            "Create Account",
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                      .hasMatch(value)) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your phone number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
                 ),
+                obscureText: _obscurePassword,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
               ),
-            ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _confirmPasswordController,
+                decoration: InputDecoration(
+                  labelText: 'Confirm Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: _obscureConfirmPassword,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm your password';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              if (authProvider.error != null)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  color: Colors.red.shade100,
+                  child: Text(
+                    authProvider.error!,
+                    style: TextStyle(color: Colors.red.shade800),
+                  ),
+                ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: authProvider.isLoading ? null : _register,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                child: authProvider.isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Register'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
+

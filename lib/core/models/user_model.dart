@@ -1,48 +1,46 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class UserModel {
-  String uid;
-  String name;
-  String email;
-  String contact;
-  String role; // "donor" or "receiver"
-  String? profilePic;
-  String city;
+  final String id;
+  final String name;
+  final String email;
+  final String phoneNumber;
+  final String role; // 'donor' or 'receiver'
+  final String? profileImageUrl;
+  final DateTime createdAt;
 
   UserModel({
-    required this.uid,
+    required this.id,
     required this.name,
     required this.email,
-    required this.contact,
+    required this.phoneNumber,
     required this.role,
-    this.profilePic,
-    required this.city,
+    this.profileImageUrl,
+    required this.createdAt,
   });
 
-  // Convert Firebase Document to UserModel
-  factory UserModel.fromDocument(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      uid: doc.id,
-      name: data['name'],
-      email: data['email'],
-      contact: data['contact'],
-      role: data['role'],
-      profilePic: data['profilePic'],
-      city: data['city'],
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      phoneNumber: json['phoneNumber'] ?? '',
+      role: json['role'] ?? '',
+      profileImageUrl: json['profileImageUrl'],
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
     );
   }
 
-  // Convert UserModel to Firebase Map
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
-      "uid": uid,
-      "name": name,
-      "email": email,
-      "contact": contact,
-      "role": role,
-      "profilePic": profilePic,
-      "city": city,
+      'id': id,
+      'name': name,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'role': role,
+      'profileImageUrl': profileImageUrl,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 }
+

@@ -1,173 +1,155 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/constants/colors.dart';
-import '../../../core/services/auth_service.dart';
-import '../../donor/screens/donor_homescreen.dart';
-import '../../receiver/screens/reciever_homescreen.dart';
+import 'package:provider/provider.dart';
+import 'package:bloood_donation_app/core/providers/auth_provider.dart';
+import 'package:bloood_donation_app/features/donor/screens/donor_homescreen.dart';
+import 'package:bloood_donation_app/features/receiver/screens/reciever_homescreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
-  String email = '';
-  String password = '';
-  bool isLoading = false;
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-  final AuthService _authService = AuthService();
-
-  void _login() async {
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => isLoading = true);
-      try {
-        var user = await _authService.signInWithEmail(
-          email: email,
-          password: password,
-        );
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.signIn(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
 
-        if (user != null) {
-          _navigateToHome(user.uid);
+      if (success && mounted) {
+        if (authProvider.user!.role == 'donor') {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const DonorHomeScreen()),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const ReceiverHomeScreen()),
+          );
         }
-      } catch (e) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      } finally {
-        setState(() => isLoading = false);
-      }
-    }
-  }
-
-  void _googleSignIn() async {
-    setState(() => isLoading = true);
-    try {
-      var user = await _authService.signInWithGoogle();
-      if (user != null) {
-        _navigateToHome(user.uid);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
-
-  void _navigateToHome(String uid) async {
-    DocumentSnapshot doc =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-    if (doc.exists) {
-      String role = doc.get('role');
-      if (role == 'donor') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DonorHomeScreen()),
-        );
-      } else if (role == 'receiver') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ReceiverHomeScreen()),
-        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Login"),
-        backgroundColor: primaryColor,
-        elevation: 0,
+        title: const Text('Login'),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Logo at the top.
-                    Center(
-                      child: Image.asset('assets/logo.jpg', width: 120),
-                    ),
-                    const SizedBox(height: 24),
-                    // Email field.
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: "Email",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (val) => email = val,
-                      validator: (val) =>
-                          val!.isEmpty ? "Please enter your email" : null,
-                    ),
-                    const SizedBox(height: 16),
-                    // Password field.
-                    TextFormField(
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: "Password",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (val) => password = val,
-                      validator: (val) =>
-                          val!.isEmpty ? "Please enter your password" : null,
-                    ),
-                    const SizedBox(height: 24),
-                    // Login button.
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: _login,
-                        child: const Text(
-                          "Login",
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Google Sign-In button.
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: _googleSignIn,
-                        label: const Text(
-                          "Sign in with Google",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 32),
+              Image.asset(
+                'assets/logo.png',
+                width: 100,
+                height: 100,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.bloodtype,
+                  color: Colors.red,
+                  size: 80,
                 ),
               ),
-            ),
+              const SizedBox(height: 32),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                      .hasMatch(value)) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: _obscurePassword,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              if (authProvider.error != null)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  color: Colors.red.shade100,
+                  child: Text(
+                    authProvider.error!,
+                    style: TextStyle(color: Colors.red.shade800),
+                  ),
+                ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: authProvider.isLoading ? null : _login,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                child: authProvider.isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Login'),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  // TODO: Implement forgot password
+                },
+                child: const Text('Forgot Password?'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
+

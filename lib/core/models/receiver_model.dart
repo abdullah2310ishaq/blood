@@ -1,44 +1,36 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class ReceiverModel {
-  String uid;
-  String hospitalName;
-  String patientName;
-  String bloodGroup;
-  bool isEmergency;
-  String city;
+  final String id;
+  final String userId;
+  final String hospitalName;
+  final String address;
+  final String contactPerson;
 
   ReceiverModel({
-    required this.uid,
+    required this.id,
+    required this.userId,
     required this.hospitalName,
-    required this.patientName,
-    required this.bloodGroup,
-    required this.isEmergency,
-    required this.city,
+    required this.address,
+    required this.contactPerson,
   });
 
-  // Convert Firebase Document to ReceiverModel
-  factory ReceiverModel.fromDocument(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  factory ReceiverModel.fromJson(Map<String, dynamic> json) {
     return ReceiverModel(
-      uid: doc.id,
-      hospitalName: data['hospitalName'],
-      patientName: data['patientName'],
-      bloodGroup: data['bloodGroup'],
-      isEmergency: data['isEmergency'],
-      city: data['city'],
+      id: json['id'] ?? '',
+      userId: json['userId'] ?? '',
+      hospitalName: json['hospitalName'] ?? '',
+      address: json['address'] ?? '',
+      contactPerson: json['contactPerson'] ?? '',
     );
   }
 
-  // Convert ReceiverModel to Firebase Map
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
-      "uid": uid,
-      "hospitalName": hospitalName,
-      "patientName": patientName,
-      "bloodGroup": bloodGroup,
-      "isEmergency": isEmergency,
-      "city": city,
+      'id': id,
+      'userId': userId,
+      'hospitalName': hospitalName,
+      'address': address,
+      'contactPerson': contactPerson,
     };
   }
 }
+

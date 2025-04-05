@@ -1,81 +1,92 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
-// Import your IntroScreen, DonorHomeScreen, ReceiverHomeScreen, etc.
-import 'intro.dart';
-import '../../donor/screens/donor_homescreen.dart';
-import '../../receiver/screens/reciever_homescreen.dart';
+import 'package:provider/provider.dart';
+import 'package:bloood_donation_app/core/providers/auth_provider.dart';
+import 'package:bloood_donation_app/features/auth/screens/intro_screen.dart';
+import 'package:bloood_donation_app/features/donor/screens/donor_homescreen.dart';
+import 'package:bloood_donation_app/features/receiver/screens/reciever_homescreen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkUser();
+    _checkAuth();
   }
 
-  // Wait for 3-5 seconds, then check if user is logged in
-  Future<void> _checkUser() async {
-    await Future.delayed(
-        const Duration(seconds: 3)); // Show splash for a few seconds
-
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      // No user => go to Intro
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const IntroScreen()),
-      );
-    } else {
-      // There's a logged-in user => check role & go to appropriate screen
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
-
-      if (doc.exists) {
-        final role = doc.get('role');
-        if (role == 'donor') {
-          Navigator.pushReplacement(
-            context,
+  Future<void> _checkAuth() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // Simulate loading time
+    await Future.delayed(const Duration(seconds: 2));
+    
+    if (authProvider.isAuthenticated) {
+      await authProvider.initUser();
+      if (authProvider.user != null) {
+        if (!mounted) return;
+        
+        if (authProvider.user!.role == 'donor') {
+          Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const DonorHomeScreen()),
           );
-        } else if (role == 'receiver') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const ReceiverHomeScreen()),
-          );
         } else {
-          // If role is missing or unknown, we can show Intro or Login
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const IntroScreen()),
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const ReceiverHomeScreen()),
           );
         }
       } else {
-        // user doc doesn't exist => fallback to Intro
-        Navigator.pushReplacement(
-          context,
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const IntroScreen()),
         );
       }
+    } else {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const IntroScreen()),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Center(
-        child: Image.asset('assets/logo.jpg', width: 150),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/logo.png',
+              width: 150,
+              height: 150,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.bloodtype,
+                color: Colors.red,
+                size: 100,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Blood Donation App',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 48),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+

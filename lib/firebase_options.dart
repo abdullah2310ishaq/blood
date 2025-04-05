@@ -63,8 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '636158664886',
     projectId: 'fir-chat-app-821a5',
     storageBucket: 'fir-chat-app-821a5.appspot.com',
-    iosClientId: '636158664886-iqtu6t10ughf5hsgiq0gjpanoca18n39.apps.googleusercontent.com',
+    iosClientId:
+        '636158664886-iqtu6t10ughf5hsgiq0gjpanoca18n39.apps.googleusercontent.com',
     iosBundleId: 'com.example.blood',
   );
-
 }

@@ -3,23 +3,23 @@ import 'package:provider/provider.dart';
 import 'package:bloood_donation_app/core/providers/donor_provider.dart';
 import 'package:bloood_donation_app/core/models/donation_request_model.dart';
 
-class SeeDonationRequestsScreen extends StatefulWidget {
-  const SeeDonationRequestsScreen({super.key});
+class MyDonationsScreen extends StatefulWidget {
+  const MyDonationsScreen({super.key});
 
   @override
-  State<SeeDonationRequestsScreen> createState() => _SeeDonationRequestsScreenState();
+  State<MyDonationsScreen> createState() => _MyDonationsScreenState();
 }
 
-class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
+class _MyDonationsScreenState extends State<MyDonationsScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchRequests();
+    _fetchDonations();
   }
 
-  Future<void> _fetchRequests() async {
+  Future<void> _fetchDonations() async {
     final donorProvider = Provider.of<DonorProvider>(context, listen: false);
-    await donorProvider.fetchAvailableRequests();
+    await donorProvider.fetchMyDonations();
   }
 
   @override
@@ -28,22 +28,22 @@ class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
 
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: _fetchRequests,
+        onRefresh: _fetchDonations,
         child: donorProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : donorProvider.availableRequests.isEmpty
+            : donorProvider.myDonations.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.search_off,
+                          Icons.history,
                           size: 64,
                           color: Colors.grey,
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'No donation requests found',
+                          'No donation history found',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.grey,
@@ -51,7 +51,7 @@ class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextButton(
-                          onPressed: _fetchRequests,
+                          onPressed: _fetchDonations,
                           child: const Text('Refresh'),
                         ),
                       ],
@@ -59,29 +59,36 @@ class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: donorProvider.availableRequests.length,
+                    itemCount: donorProvider.myDonations.length,
                     itemBuilder: (context, index) {
-                      final request = donorProvider.availableRequests[index];
-                      return _buildRequestCard(request);
+                      final donation = donorProvider.myDonations[index];
+                      return _buildDonationCard(donation);
                     },
                   ),
       ),
     );
   }
 
-  Widget _buildRequestCard(DonationRequestModel request) {
-    final donorProvider = Provider.of<DonorProvider>(context, listen: false);
+  Widget _buildDonationCard(DonationRequestModel donation) {
+    Color statusColor;
+    String statusText;
     
-    Color urgencyColor;
-    switch (request.urgency) {
-      case 'high':
-        urgencyColor = Colors.red;
+    switch (donation.status) {
+      case 'accepted':
+        statusColor = Colors.blue;
+        statusText = 'Accepted';
         break;
-      case 'medium':
-        urgencyColor = Colors.orange;
+      case 'completed':
+        statusColor = Colors.green;
+        statusText = 'Completed';
+        break;
+      case 'cancelled':
+        statusColor = Colors.red;
+        statusText = 'Cancelled';
         break;
       default:
-        urgencyColor = Colors.green;
+        statusColor = Colors.grey;
+        statusText = donation.status.toUpperCase();
     }
 
     return Card(
@@ -99,11 +106,11 @@ class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: urgencyColor,
+                    color: statusColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    '${request.urgency.toUpperCase()} URGENCY',
+                    statusText,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -122,7 +129,7 @@ class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    request.bloodType,
+                    donation.bloodType,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -133,7 +140,7 @@ class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              request.hospitalName,
+              donation.hospitalName,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -141,12 +148,12 @@ class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Patient: ${request.patientName}',
+              'Patient: ${donation.patientName}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 4),
             Text(
-              'Address: ${request.address}',
+              'Address: ${donation.address}',
               style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black54,
@@ -154,59 +161,32 @@ class _SeeDonationRequestsScreenState extends State<SeeDonationRequestsScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Contact: ${request.contactNumber}',
+              'Contact: ${donation.contactNumber}',
               style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black54,
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              'Posted: ${_formatDate(request.createdAt)}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Confirm Donation'),
-                    content: const Text(
-                      'Are you sure you want to accept this donation request? The hospital will be notified and will contact you.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Accept'),
-                      ),
-                    ],
+            Row(
+              children: [
+                Text(
+                  'Accepted: ${_formatDate(donation.createdAt)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
                   ),
-                );
-
-                if (confirmed == true) {
-                  await donorProvider.acceptDonationRequest(request.id);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Donation request accepted!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(40),
-              ),
-              child: const Text('Accept Request'),
+                ),
+                const Spacer(),
+                if (donation.completedAt != null)
+                  Text(
+                    'Completed: ${_formatDate(donation.completedAt!)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.green,
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
